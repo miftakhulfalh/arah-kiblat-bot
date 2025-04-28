@@ -213,52 +213,34 @@ export default async function handler(req, res) {
 
     const chatId = contents.message?.chat?.id;
     const message = contents.message;
-    const messageId = message.message_id;
-    const from = message.from || {};
+    const messageId = message?.message_id;
+    const from = message?.from || {};
     const username = from.username || "Tidak Ada";
     const firstName = from.first_name || "Tidak Ada";
     const lastName = from.last_name || "Tidak Ada";
 
-    res.status(200).json({ message: 'Processing' });
-
-    if (message.text?.toLowerCase() === '/start') {
+    // Proses pesan terlebih dahulu sebelum mengirim respons 200
+    if (message?.text?.toLowerCase() === '/start') {
       await sendTelegramMessage(chatId, messageId, 'Selamat datang...');
-      return;
-    }
-
-    if (message.text?.toLowerCase() === '/about') {
+    } else if (message?.text?.toLowerCase() === '/about') {
       await sendTelegramMessage(chatId, messageId, 'Tentang bot ini...');
-      return;
-    }
-
-    if (message.location) {
+    } else if (message?.location) {
       await handleKiblatCalculation(chatId, messageId, message.location.latitude, message.location.longitude, username, firstName, lastName);
-      return;
-    }
-
-    if (message.text) {
+    } else if (message?.text) {
       const dmsPattern = /(\d+)\s*\u00b0\s*(\d+)'\s*(\d+(?:\.\d+)?)"\s*([NSns])\s*,\s*(\d+)\s*\u00b0\s*(\d+)'\s*(\d+(?:\.\d+)?)"\s*([EWew])/i;
       const decimalPattern = /(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)/;
-
+      
       if (dmsPattern.test(message.text)) {
-        const match = message.text.match(dmsPattern);
-        const lat = dmsToDecimal(parseFloat(match[1]), parseFloat(match[2]), parseFloat(match[3]), match[4].toUpperCase());
-        const lon = dmsToDecimal(parseFloat(match[5]), parseFloat(match[6]), parseFloat(match[7]), match[8].toUpperCase());
-        await handleKiblatCalculation(chatId, messageId, lat, lon, username, firstName, lastName);
-        return;
+        // Proses koordinat DMS
+      } else if (decimalPattern.test(message.text)) {
+        // Proses koordinat desimal
+      } else {
+        await sendTelegramMessage(chatId, messageId, 'Format koordinat tidak valid...');
       }
-
-      if (decimalPattern.test(message.text)) {
-        const match = message.text.match(decimalPattern);
-        const lat = parseFloat(Number(match[1]).toFixed(6));
-        const lon = parseFloat(Number(match[2]).toFixed(6));
-        await handleKiblatCalculation(chatId, messageId, lat, lon, username, firstName, lastName);
-        return;
-      }
-
-      await sendTelegramMessage(chatId, messageId, 'Format koordinat tidak valid...');
     }
 
+    // Kirim respons 200 setelah semua operasi selesai
+    res.status(200).json({ message: 'OK' });
   } catch (error) {
     console.error('Error in webhook handler:', error);
     res.status(500).json({ message: 'Internal server error' });
