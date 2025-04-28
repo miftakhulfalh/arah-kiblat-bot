@@ -199,7 +199,11 @@ function getQiblaDeviation(azimuthDeg) {
     direction
   };
 }
-
+// Tambahkan timeout helper
+const withTimeout = (promise, ms) => Promise.race([
+  promise,
+  new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), ms))
+]);
 async function saveToSpreadsheet(data) {
   try {
     // Setup authentication
@@ -220,7 +224,10 @@ async function saveToSpreadsheet(data) {
       valueInputOption: 'USER_ENTERED',
       resource: { values }
     });
-    
+      await withTimeout(
+      sheets.spreadsheets.values.append(...),
+      8000 // Timeout 8 detik
+    );
     console.log('Data saved to spreadsheet');
   } catch (error) {
     console.error('Error saving to spreadsheet:', error);
@@ -293,12 +300,14 @@ Azimuth Kiblat
 Kecondongan
 ------------------   ${deviation.deviationDMS.d}° ${deviation.deviationDMS.m}' ${deviation.deviationDMS.s}" ke ${deviation.direction} dari arah ${deviation.baseDirection}`;
 
+    // Optimasi: Jangan tunggu saveToSpreadsheet untuk mengirim response
+    saveToSpreadsheet(...).catch(e => console.error('Background save error:', e));
     // Send message and log response
     await sendTelegramMessage(chatId, messageId, messageReply.trim());
     console.log('Calculation completed and message sent for coordinates: ' + lat + ', ' + lon);
   } catch (error) {
     console.log('Error in handleKiblatCalculation: ' + error);
-    await sendTelegramMessage(chatId, messageId, 'Maaf, terjadi kesalahan dalam perhitungan. Silakan coba lagi.');
+    await sendTelegramMessage(chatId, messageId, 'Maaf, terjadi kesalahan dalam perhitungan. Silakan coba lagi dalam 10 detik.');
   }
 }
 
@@ -321,10 +330,11 @@ export default async function handler(req, res) {
     const firstName = from.first_name || "Tidak Ada";
     const lastName = from.last_name || "Tidak Ada";
 
-    console.log('Received message: ' + JSON.stringify(message));
+    // Pindahkan response 200 ke sini
+    res.status(200).json({ message: 'OK' });
 
     // Start message handling
-    if (message.text && message.text.toLowerCase() === '/start') {
+    if (message?.text?.toLowerCase() === '/start') {
       const welcomeMessage = `
 Selamat datang di Perhitungan Arah Kiblat.
 
@@ -340,7 +350,7 @@ Anda memiliki dua pilihan:
       return;
     }
 
-    if (message.text && message.text.toLowerCase() === '/about') {
+   if (message?.text?.toLowerCase() === '/about') {
       const aboutMessage = `
 Perhitungan arah kiblat ini menggunakan rumus 
 cotan B = tan latitude Ka'bah + sin latitude tempat  / sin C - sin latitude tempat / tan C
@@ -351,13 +361,13 @@ Contact x.com/miftahelfalh`;
       return;
     }
 
-    if (message.location) {
+    if (message?.location) {
       console.log('Processing location message: ' + JSON.stringify(message.location));
       await handleKiblatCalculation(chatId, messageId, message.location.latitude, message.location.longitude, username, firstName, lastName);
       return;
     }
 
-    if (message.text) {
+    if (message?.text) {
       console.log('Processing text message: ' + message.text);
       
       // Pattern untuk format DMS
