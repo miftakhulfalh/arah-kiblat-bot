@@ -224,8 +224,13 @@ async function saveToSpreadsheet(data) {
       valueInputOption: 'USER_ENTERED',
       resource: { values }
     });
-      await withTimeout(
-      sheets.spreadsheets.values.append(...),
+    await withTimeout(
+      sheets.spreadsheets.values.append({
+        spreadsheetId,
+        range: 'Sheet1!A:N',
+        valueInputOption: 'USER_ENTERED',
+        resource: { values }
+      }),
       8000 // Timeout 8 detik
     );
     console.log('Data saved to spreadsheet');
