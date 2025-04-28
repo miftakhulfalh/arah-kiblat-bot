@@ -6,7 +6,7 @@ const botToken = process.env.BOT_TOKEN;
 const telegramApiUrl = `https://api.telegram.org/bot${botToken}`;
 
 // Ganti ini dengan URL deployment Vercel Anda
-const webhookUrl = process.argv[2] || 'https://nama-project-anda.vercel.app/api/webhook';
+const webhookUrl = process.argv[2] || 'https://arah-kiblat-bot.vercel.app/api/webhook';
 
 async function setWebhook() {
   const url = `${telegramApiUrl}/setWebhook?url=${webhookUrl}`;
