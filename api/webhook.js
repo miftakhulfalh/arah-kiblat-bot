@@ -278,7 +278,8 @@ async function handleKiblatCalculation(chatId, messageId, lat, lon, username, fi
       qiblaDirection,
       `${azimuthResult.d}° ${azimuthResult.m}' ${azimuthResult.s}"`
     ]);
-
+    saveToSpreadsheet(spreadsheetData)
+  .catch(e => console.error('Background save error:', e));
     const messageReply = `
 <b>PERHITUNGAN ARAH KIBLAT</b>
 
@@ -300,7 +301,22 @@ Kecondongan
 ------------------   ${deviation.deviationDMS.d}° ${deviation.deviationDMS.m}' ${deviation.deviationDMS.s}" ke ${deviation.direction} dari arah ${deviation.baseDirection}`;
 
     // Optimasi: Jangan tunggu saveToSpreadsheet untuk mengirim response
-    saveToSpreadsheet(...).catch(e => console.error('Background save error:', e));
+  saveToSpreadsheet([
+    chatId,
+    username,
+    firstName,
+    lastName,
+    lat,
+    lon,
+    `${latDMS.d}° ${latDMS.m}' ${latDMS.s}" ${latDirection}`,
+    `${lonDMS.d}° ${lonDMS.m}' ${lonDMS.s}" ${lonDirection}`,
+    city,
+    state,
+    `${kiblatDMS.d}° ${kiblatDMS.m}' ${kiblatDMS.s}"`,
+    baseDirection,
+    qiblaDirection,
+    `${azimuthResult.d}° ${azimuthResult.m}' ${azimuthResult.s}"`
+]).catch(e => console.error('Background save error:', e));
     // Send message and log response
     await sendTelegramMessage(chatId, messageId, messageReply.trim());
     console.log('Calculation completed and message sent for coordinates: ' + lat + ', ' + lon);
