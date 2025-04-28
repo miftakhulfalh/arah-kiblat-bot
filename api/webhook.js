@@ -302,19 +302,28 @@ Kecondongan
   }
 }
 
+
+export const config = {
+  api: {
+    bodyParser: false
+  }
+};
+
 module.exports = async (req, res) => {
-  // Only allow POST requests
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method not allowed' });
   }
-  
+
   try {
-    const contents = req.body;
-    
-    // Check if it's a valid Telegram update
-    if (!contents.message) {
-      return res.status(400).json({ message: 'Invalid Telegram update' });
+    const chunks = [];
+    for await (const chunk of req) {
+      chunks.push(chunk);
     }
+    const rawBody = Buffer.concat(chunks).toString('utf8');
+    const contents = JSON.parse(rawBody);
+
+    console.log('Incoming Telegram update:', JSON.stringify(contents, null, 2));
+ 
     
     const chatId = contents.message.chat.id;
     const message = contents.message;
