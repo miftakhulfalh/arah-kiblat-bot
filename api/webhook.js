@@ -218,12 +218,6 @@ async function saveToSpreadsheet(data) {
     const values = [data];
     
     // Append to spreadsheet
-    await sheets.spreadsheets.values.append({
-      spreadsheetId,
-      range: 'Sheet1!A:N',
-      valueInputOption: 'USER_ENTERED',
-      resource: { values }
-    });
     await withTimeout(
       sheets.spreadsheets.values.append({
         spreadsheetId,
